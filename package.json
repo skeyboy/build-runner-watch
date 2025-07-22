@@ -1,0 +1,98 @@
+{
+  "name": "build-runner-watch",
+  "displayName": "build_runner_watch",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "publisher": "build-runner-watch",
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:dart"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "build-runner-watch.options",
+        "title": "Build Runner"
+      },
+      {
+        "command": "build-runner-watch.build",
+        "title": "Build"
+      },
+      {
+        "command": "build-runner-watch.watch",
+        "title": "Watch"
+      },
+      {
+        "command": "build-runner-watch.clean",
+        "title": "Clean"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "build-runner-watch.submenu",
+        "label": "Build Runner"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "build-runner-watch.options",
+        "key": "ctrl+shift+b",
+        "when": "editorTextFocus"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceLangId == dart || resourceExtname == .dart || resourceExtname == .yaml || resourceFilename == pubspec.yaml",
+          "submenu": "build-runner-watch.submenu",
+          "group": "navigation"
+        }
+      ],
+      "build-runner-watch.submenu": [
+        {
+          "command": "build-runner-watch.build"
+        },
+        {
+          "command": "build-runner-watch.watch"
+        },
+        {
+          "command": "build-runner-watch.clean"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.102.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.25.1",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.8.3",
+    "webpack": "^5.99.7",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "@vscode/vsce": "^3.6.0"
+  }
+}
