@@ -2,9 +2,13 @@
   "name": "build-runner-watch",
   "displayName": "build_runner_watch",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.102.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/skeyboy/build-runner-watch.git"
   },
   "publisher": "build-runner-watch",
   "categories": [
