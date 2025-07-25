@@ -5,6 +5,39 @@ import * as vscode from 'vscode';
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+	// 简单 i18n 资源
+	const  i18n = {
+		zh: {
+			noBuildRunner: 'pubspec.yaml 未检测到 build_runner 依赖（或已被注释），命令未执行。',
+			buildStarted: '已开始执行 Flutter build_runner（{label}），详情见输出面板。',
+			watchStarted: '已在后台启动 Flutter build_runner watch，详情见输出面板。',
+			watchExited: '[watch 进程已退出，代码: {code}]',
+			selectCommand: '请选择 build_runner 命令参数',
+		},
+		en: {
+			noBuildRunner: 'No build_runner dependency found in pubspec.yaml (or it is commented out). Command not executed.',
+			buildStarted: 'Flutter build_runner ({label}) started. See output panel for details.',
+			watchStarted: 'Flutter build_runner watch started in background. See output panel for details.',
+			watchExited: '[watch process exited, code: {code}]',
+			selectCommand: 'Please select build_runner command',
+		}
+	};
+	// 获取当前语言
+	function getLang() {
+		const lang = vscode.env.language;
+		return lang.startsWith('zh') ? 'zh' : 'en';
+	}
+	type I18nKey = 'noBuildRunner' | 'buildStarted' | 'watchStarted' | 'watchExited' | 'selectCommand';
+	function t(key: I18nKey, vars?: Record<string, string|number>) {
+		const lang = getLang();
+		let str = (i18n[lang] as Record<I18nKey, string>)[key] || key;
+		if (vars) {
+			Object.keys(vars).forEach(k => {
+				str = str.replace(new RegExp(`\{${k}\}`, 'g'), String(vars[k]));
+			});
+		}
+		return str;
+	}
 	// 检查 pubspec.yaml 是否包含 build_runner 依赖
 	function checkBuildRunner(cwd: string): boolean {
 		const pubspecPath = require('path').join(cwd, 'pubspec.yaml');
@@ -32,7 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	function runBuildRunnerCommand(cwd: string, command: string, label: string) {
 		if (!checkBuildRunner(cwd)) {
-			vscode.window.showWarningMessage('pubspec.yaml 未检测到 build_runner 依赖（或已被注释），命令未执行。');
+			vscode.window.showWarningMessage(t('noBuildRunner'));
 			return;
 		}
 		const outputChannel = vscode.window.createOutputChannel('Flutter Build Runner');
@@ -50,26 +83,28 @@ export function activate(context: vscode.ExtensionContext) {
 				outputChannel.appendLine(data.toString());
 			});
 			child.on('close', (code: number) => {
-				outputChannel.appendLine(`[watch 进程已退出，代码: ${code}]`);
+				outputChannel.appendLine(t('watchExited', { code }));
 			});
-			vscode.window.showInformationMessage('已在后台启动 Flutter build_runner watch，详情见输出面板。');
+			vscode.window.setStatusBarMessage(t('watchStarted'), 2000);
 		} else {
-			interface ExecError extends Error {
-				code?: number;
-				signal?: string;
+			// build/clean 实时输出日志
+			let args: string[] = [];
+			if (label === 'build') {
+				args = ['run', 'build_runner', 'build', '--delete-conflicting-outputs'];
+			} else if (label === 'clean') {
+				args = ['run', 'build_runner', 'clean'];
 			}
-			cp.exec(command, { cwd }, (error: ExecError | null, stdout: string, stderr: string) => {
-				if (error) {
-					outputChannel.appendLine(`[错误] ${error.message}`);
-				}
-				if (stdout) {
-					outputChannel.appendLine(stdout);
-				}
-				if (stderr) {
-					outputChannel.appendLine(stderr);
-				}
+			const child = cp.spawn('dart', args, { cwd, shell: true });
+			child.stdout.on('data', (data: Buffer) => {
+				outputChannel.appendLine(data.toString());
 			});
-			vscode.window.showInformationMessage(`已开始执行 Flutter build_runner（${label}），详情见输出面板。`);
+			child.stderr.on('data', (data: Buffer) => {
+				outputChannel.appendLine(data.toString());
+			});
+			child.on('close', (code: number) => {
+				outputChannel.appendLine(t('watchExited', { code }));
+			});
+			vscode.window.setStatusBarMessage(t('buildStarted', { label }), 2000);
 		}
 	}
 
@@ -116,7 +151,7 @@ export function activate(context: vscode.ExtensionContext) {
 			{ label: 'clean', description: 'dart run build_runner clean' }
 		];
 		const selected = await vscode.window.showQuickPick(options, {
-			placeHolder: '请选择 build_runner 命令参数',
+			placeHolder: t('selectCommand'),
 		});
 		if (!selected) {return;}
 		let command = '';
