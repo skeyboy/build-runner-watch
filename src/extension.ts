@@ -38,6 +38,16 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		return str;
 	}
+
+	function checkFvm(cwd: string): boolean { 
+		const fvmrc = require('path').join(cwd, '.fvmrc');
+		if (!require('fs').existsSync(fvmrc)) {
+			return false;
+		} else { 
+			return true;
+		}
+	}
+
 	// 检查 pubspec.yaml 是否包含 build_runner 依赖
 	function checkBuildRunner(cwd: string): boolean {
 		const pubspecPath = require('path').join(cwd, 'pubspec.yaml');
@@ -155,12 +165,13 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 		if (!selected) {return;}
 		let command = '';
+		const fvmOrNot = checkFvm(cwd) ? 'fvm dart' : 'dart';
 		if (selected.label === 'build') {
-			command = 'dart run build_runner build --delete-conflicting-outputs';
+			command =  ' run build_runner build --delete-conflicting-outputs';
 		} else if (selected.label === 'watch') {
-			command = 'dart run build_runner watch --delete-conflicting-outputs';
+			command = fvmOrNot + ' run build_runner watch --delete-conflicting-outputs';
 		} else if (selected.label === 'clean') {
-			command = 'dart run build_runner clean';
+			command = fvmOrNot + ' run build_runner clean';
 		}
 		runBuildRunnerCommand(cwd, command, selected.label);
 	});
@@ -174,7 +185,8 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		const workspaceDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
 		const cwd = findPubspecYamlUpwards(baseDir, workspaceDir) || baseDir;
-		runBuildRunnerCommand(cwd, 'dart run build_runner build --delete-conflicting-outputs', 'build');
+		const fvmOrNot = checkFvm(cwd) ? 'fvm dart' : 'dart';
+		runBuildRunnerCommand(cwd, fvmOrNot + ' run build_runner build --delete-conflicting-outputs', 'build');
 	});
 	context.subscriptions.push(disposableBuild);
 
@@ -186,7 +198,8 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		const workspaceDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
 		const cwd = findPubspecYamlUpwards(baseDir, workspaceDir) || baseDir;
-		runBuildRunnerCommand(cwd, 'dart run build_runner watch --delete-conflicting-outputs', 'watch');
+		const fvmOrNot = checkFvm(cwd) ? 'fvm dart' : 'dart';
+		runBuildRunnerCommand(cwd, fvmOrNot+' run build_runner watch --delete-conflicting-outputs', 'watch');
 	});
 	context.subscriptions.push(disposableWatch);
 
@@ -198,7 +211,8 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 		const workspaceDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd();
 		const cwd = findPubspecYamlUpwards(baseDir, workspaceDir) || baseDir;
-		runBuildRunnerCommand(cwd, 'dart run build_runner clean', 'clean');
+		const fvmOrNot = checkFvm(cwd) ? 'fvm dart' : 'dart';
+		runBuildRunnerCommand(cwd, fvmOrNot + ' run build_runner clean', 'clean');
 	});
 	context.subscriptions.push(disposableClean);
 
